@@ -1,0 +1,58 @@
+apply plugin: 'com.android.application'
+
+Properties props = new Properties()
+try {
+    props.load(new FileInputStream(signingProperties))
+} catch (FileNotFoundException e) {
+}
+
+android {
+    compileSdkVersion commonCompileSdkVersion
+    buildToolsVersion "${commonBuildToolsVersion}"
+
+    defaultConfig {
+        applicationId "vig.sensortracker"
+        minSdkVersion 20
+        targetSdkVersion commonTargetSdkVersion
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        versionCode appVersionCode * 10
+        versionName "${appVersionName}"
+    }
+
+    signingConfigs {
+        release {
+            if (!props.isEmpty()) {
+                storeFile file(props['RELEASE_STORE_FILE'])
+                storePassword props['RELEASE_STORE_PASSWORD']
+                keyAlias props['RELEASE_KEY_ALIAS']
+                keyPassword props['RELEASE_KEY_PASSWORD']
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (!props.isEmpty()) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+}
+
+dependencies {
+    compile project(path: ':shared')
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+
+    compile "com.google.android.gms:play-services-wearable:${playServicesVersion}"
+    compile "org.apache.commons:commons-lang3:${apacheCommonsVersion}"
+
+    wearApp project(path: ':wear', configuration: 'wear1Release')
+
+    testCompile 'junit:junit:4.12'
+}

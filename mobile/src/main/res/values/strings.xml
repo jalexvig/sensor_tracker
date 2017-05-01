@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">SensorTracker</string>
+    <string name="title_activity_sensors">SensorsActivity</string>
+</resources>
