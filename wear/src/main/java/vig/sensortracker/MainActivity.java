@@ -51,12 +51,12 @@ public class MainActivity extends Activity implements MakeRequestTask.MakeReques
 
         ensureServiceRunning();
 
-        setupAPIButton();
+        setupSyncButton();
 
-        setupExecutionButton();
+        setupStopPlayButton();
     }
 
-    private void setupExecutionButton() {
+    private void setupStopPlayButton() {
 
         mExecutionButton = (ImageButton) findViewById(R.id.execution_button);
         mExecutionButton.setOnClickListener(new View.OnClickListener() {
@@ -74,13 +74,13 @@ public class MainActivity extends Activity implements MakeRequestTask.MakeReques
 
     }
 
-    private void setupAPIButton() {
+    private void setupSyncButton() {
         mAPIButton = (ImageButton) findViewById(R.id.sync_button);
         mAPIButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 mAPIButton.setEnabled(false);
-                queryAPI();
+                sendData();
                 mAPIButton.setEnabled(true);
             }
         });
@@ -111,35 +111,39 @@ public class MainActivity extends Activity implements MakeRequestTask.MakeReques
         return false;
     }
 
-    private void queryAPI() {
-        if (mCredential.getSelectedAccountName() == null) {
-            if (checkSelfPermission(Manifest.permission.GET_ACCOUNTS) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(new String[] {Manifest.permission.GET_ACCOUNTS}, RCP_AUTH_CRED);
-                return;
-            }
+    private void sendData() {
+        if (!setCredentialAccount()) return;
 
-            chooseAccount();
+        Map<String, String> toSend = mSensorValueManager.getStoredValues();
+        if (!toSend.isEmpty()) {
+            Log.d(TAG, "sendData: account name " + mCredential.getSelectedAccountName());
+            new MakeRequestTask(mCredential, toSend, this).execute();
         } else {
-            Map<String, String> toSend = mSensorValueManager.getStoredValues();
-            if (!toSend.isEmpty()) {
-                Log.d(TAG, "queryAPI: account name " + mCredential.getSelectedAccountName());
-                new MakeRequestTask(mCredential, toSend, this).execute();
-            } else {
-                Log.d(TAG, "No data to send.");
-            }
+            Log.d(TAG, "No data to send.");
         }
     }
 
-    private void chooseAccount() {
-        String accountName = getSettingsSP().getString(Settings.SP_ACCOUNT_NAME, null);
-        if (accountName != null) {
-            mCredential.setSelectedAccountName(accountName);
-            queryAPI();
+    private boolean setCredentialAccount() {
+
+        if (mCredential.getSelectedAccountName() != null) {
+            return true;
+        } else {
+            String accountName = getSettingsSP().getString(Settings.SP_ACCOUNT_NAME, null);
+
+            if (accountName != null) {
+                mCredential.setSelectedAccountName(accountName);
+                return true;
+            }
+        }
+
+        if (checkSelfPermission(Manifest.permission.GET_ACCOUNTS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.GET_ACCOUNTS}, RCP_AUTH_CRED);
         } else {
             startActivityForResult(
                     mCredential.newChooseAccountIntent(),
                     RC_PICK_ACCOUNT);
         }
+        return false;
     }
 
     private SharedPreferences getSettingsSP() {
@@ -163,7 +167,7 @@ public class MainActivity extends Activity implements MakeRequestTask.MakeReques
 
     @Override
     public void retry() {
-        queryAPI();
+        sendData();
     }
 
     @Override
@@ -180,14 +184,14 @@ public class MainActivity extends Activity implements MakeRequestTask.MakeReques
                             data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
                     getSettingsSP().edit().putString(Settings.SP_ACCOUNT_NAME, accountName).apply();
                     mCredential.setSelectedAccountName(accountName);
-                    queryAPI();
+                    sendData();
                 } else if (resultCode == RESULT_CANCELED) {
                     Toast.makeText(this, "User account selection canceled or no accounts found.", Toast.LENGTH_LONG).show();
                 }
                 break;
             case RC_OAUTH_ACCOUNT:
                 if (resultCode == RESULT_OK) {
-                    queryAPI();
+                    sendData();
                 }
         }
     }
@@ -197,7 +201,7 @@ public class MainActivity extends Activity implements MakeRequestTask.MakeReques
         switch (requestCode) {
             case RCP_AUTH_CRED:
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    queryAPI();
+                    sendData();
                 } else {
                     Log.d(TAG, "onRequestPermissionsResult: " + Integer.toString(grantResults[0]));
                     Toast.makeText(this, "READ_CONTACTS Denied", Toast.LENGTH_SHORT).show();

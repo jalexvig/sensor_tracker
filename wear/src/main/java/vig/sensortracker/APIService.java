@@ -39,11 +39,24 @@ public class APIService extends IntentService implements MakeRequestTask.MakeReq
                 .setBackOff(new ExponentialBackOff());
     }
 
-    public void queryAPI() {
+    public void sendData() {
+        if (!setCredentialAccount()) return;
+
+        Map<String, String> toSend = mSensorValueManager.getStoredValues();
+        if (!toSend.isEmpty()) {
+            Log.d(TAG, "sendData: account name " + mCredential.getSelectedAccountName());
+            new MakeRequestTask(mCredential, toSend, this).execute();
+        } else {
+            Log.d(TAG, "No data to send.");
+        }
+    }
+
+    private boolean setCredentialAccount() {
+
         if (mCredential.getSelectedAccountName() == null) {
             if (checkSelfPermission(Manifest.permission.GET_ACCOUNTS) != PackageManager.PERMISSION_GRANTED) {
                 logErrorMessage("Open app to allow permissions.");
-                return;
+                return false;
             }
 
             String accountName = getSettingsSP().getString(Settings.SP_ACCOUNT_NAME, null);
@@ -51,17 +64,10 @@ public class APIService extends IntentService implements MakeRequestTask.MakeReq
                 mCredential.setSelectedAccountName(accountName);
             } else {
                 logErrorMessage("Open app to select account.");
-                return;
+                return false;
             }
         }
-
-        Map<String, String> toSend = mSensorValueManager.getStoredValues();
-        if (!toSend.isEmpty()) {
-            Log.d(TAG, "queryAPI: account name " + mCredential.getSelectedAccountName());
-            new MakeRequestTask(mCredential, toSend, this).execute();
-        } else {
-            Log.d(TAG, "No data to send.");
-        }
+        return true;
     }
 
     private void logErrorMessage(String s) {
@@ -71,7 +77,7 @@ public class APIService extends IntentService implements MakeRequestTask.MakeReq
 
     @Override
     protected void onHandleIntent(@Nullable Intent intent) {
-        queryAPI();
+        sendData();
     }
 
     private SharedPreferences getSettingsSP() {
@@ -95,7 +101,7 @@ public class APIService extends IntentService implements MakeRequestTask.MakeReq
 
     @Override
     public void retry() {
-        queryAPI();
+        sendData();
     }
     
     @Override

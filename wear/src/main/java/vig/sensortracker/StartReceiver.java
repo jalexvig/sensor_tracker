@@ -24,11 +24,7 @@ public class StartReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         Log.d(TAG, "onReceive: Received");
 
-        boolean start = intent.getBooleanExtra(KEY_START, false);
-
-        start = start || getStartValue(context);
-
-        getStartValue(context);
+        boolean start = intent.getBooleanExtra(KEY_START, false) || getStartValue(context);
 
         setupSensorService(context, start);
 
