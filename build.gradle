@@ -21,7 +21,7 @@ ext {
     wearableVersion = '2.0.1'
     commonBuildToolsVersion = '25.0.2'
     commonCompileSdkVersion = 25
-    commonTargetSdkVersion = 25
+    commonTargetSdkVersion = 26
     appVersionCode = 3
     appVersionName = "0.0.1"
     signingProperties = "sensortracker.properties"
