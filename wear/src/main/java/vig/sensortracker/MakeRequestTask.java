@@ -10,10 +10,6 @@ import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecovera
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
-import com.google.api.services.sheets.v4.model.CellData;
-import com.google.api.services.sheets.v4.model.ExtendedValue;
-import com.google.api.services.sheets.v4.model.GridData;
-import com.google.api.services.sheets.v4.model.RowData;
 import com.google.api.services.sheets.v4.model.Spreadsheet;
 import com.google.api.services.sheets.v4.model.SpreadsheetProperties;
 import com.google.api.services.sheets.v4.model.ValueRange;
@@ -37,10 +33,6 @@ public class MakeRequestTask extends AsyncTask<Void, Void, Boolean> {
     private MakeRequestListener mListener;
 
     MakeRequestTask(GoogleAccountCredential credential, Map toSend, MakeRequestListener listener) {
-        this(credential, toSend, null, listener);
-    }
-
-    MakeRequestTask(GoogleAccountCredential credential, Map toSend, String spreadsheetId, MakeRequestListener listener) {
         HttpTransport transport = AndroidHttp.newCompatibleTransport();
         JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
         mService = new com.google.api.services.sheets.v4.Sheets.Builder(
@@ -48,7 +40,6 @@ public class MakeRequestTask extends AsyncTask<Void, Void, Boolean> {
                 .setApplicationName("Sensor Tracker")
                 .build();
         mData = toSend;
-        mSpreadsheetId = spreadsheetId;
         mListener = listener;
     }
 

@@ -95,18 +95,16 @@ public class MainActivity extends Activity implements MakeRequestTask.MakeReques
     }
 
     private void ensureServiceRunning() {
+        updateRunningSP(true);
         if (!isMyServiceRunning(MainService.class)) {
             Intent i = new Intent(this, StartReceiver.class);
             sendBroadcast(i);
         }
-        updateRunningSP(true);
         mServiceRunning = true;
     }
 
     private void updateRunningSP(boolean running) {
-        SharedPreferences sp = getSharedPreferences(Settings.SP_NAME_SETTINGS, Context.MODE_PRIVATE);
-
-        sp.edit().putBoolean(Settings.RUN_BOOLEAN, running).apply();
+        getSettingsSP().edit().putBoolean(Settings.RUN_BOOLEAN, running).apply();
     }
 
     private boolean isMyServiceRunning(Class<?> serviceClass) {

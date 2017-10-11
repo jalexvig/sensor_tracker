@@ -81,7 +81,7 @@ public class MainService extends Service implements SensorEventListener {
         return mBinder;
     }
 
-    public class LocalBinder extends Binder {
+    class LocalBinder extends Binder {
         MainService getService() {
             return MainService.this;
         }

@@ -17,14 +17,12 @@ public class StartReceiver extends BroadcastReceiver {
     private AlarmManager mAlarmManager;
     private PendingIntent mAlarmIntent;
 
-    public static final String KEY_START = "START";
-
 
     @Override
     public void onReceive(Context context, Intent intent) {
         Log.d(TAG, "onReceive: Received");
 
-        boolean start = intent.getBooleanExtra(KEY_START, false) || getStartValue(context);
+        boolean start = getStartValue(context);
 
         setupSensorService(context, start);
 
@@ -34,9 +32,7 @@ public class StartReceiver extends BroadcastReceiver {
     private boolean getStartValue(Context context) {
         SharedPreferences sp = context.getSharedPreferences(Settings.SP_NAME_SETTINGS, Context.MODE_PRIVATE);
 
-        boolean res = sp.getBoolean(Settings.RUN_BOOLEAN, true);
-
-        return res;
+        return sp.getBoolean(Settings.RUN_BOOLEAN, true);
     }
 
 
@@ -64,7 +60,7 @@ public class StartReceiver extends BroadcastReceiver {
 
         if (start) {
             mAlarmManager.setRepeating(AlarmManager.RTC_WAKEUP, Calendar.getInstance().getTimeInMillis(),
-                    1000 * 60 * 1, mAlarmIntent);
+                    1000 * 60, mAlarmIntent);
             Log.d(TAG, "setupAPICalls: Setup API calls");
         }
     }
