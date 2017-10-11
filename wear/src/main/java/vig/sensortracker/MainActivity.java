@@ -54,6 +54,14 @@ public class MainActivity extends Activity implements MakeRequestTask.MakeReques
         setupSyncButton();
 
         setupStopPlayButton();
+
+        ensureSpreadsheetCreated();
+    }
+
+    private void ensureSpreadsheetCreated() {
+        if (getSpreadsheetId() == null) {
+            mAPIButton.performClick();
+        }
     }
 
     private void setupStopPlayButton() {
