@@ -12,20 +12,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-public class SensorValueManagers {
+class SensorValueManagers {
 
-    public static class SensorValueManagerSP extends SensorValueManager {
+    static class SensorValueManagerSP extends SensorValueManager {
 
         private static final String SP_NAME_SENSOR_VALUES = "SPSensorValues";
 
         private SharedPreferences mSharedPref;
 
-        public SensorValueManagerSP(Context c) {
+        SensorValueManagerSP(Context c) {
             super();
             setSP(c);
         }
 
-        public SensorValueManagerSP(Context c, HashMap<Integer, SensorTolerance> tolerances) {
+        SensorValueManagerSP(Context c, HashMap<Integer, SensorTolerance> tolerances) {
             super(tolerances);
             setSP(c);
         }
@@ -58,28 +58,28 @@ public class SensorValueManagers {
         }
     }
 
-    public static abstract class SensorValueManager {
+    static abstract class SensorValueManager {
 
         private static final String TAG = "SensorValueManager";
         private HashMap<Integer, SensorTolerance> mTolerances;
 
-        public SensorValueManager() {
+        SensorValueManager() {
             this(new HashMap<Integer, SensorTolerance>());
         }
 
-        public SensorValueManager(HashMap<Integer, SensorTolerance> tolerances) {
+        SensorValueManager(HashMap<Integer, SensorTolerance> tolerances) {
             mTolerances = tolerances;
         }
 
-        public void addSensorTolerance(int sensorType, float tolerance, boolean cumulative) {
+        void addSensorTolerance(int sensorType, float tolerance, boolean cumulative) {
             mTolerances.put(sensorType, new SensorTolerance(tolerance, cumulative));
         }
 
-        public void addSensorTolerance(int sensorType, float tolerance) {
+        void addSensorTolerance(int sensorType, float tolerance) {
             mTolerances.put(sensorType, new SensorTolerance(tolerance));
         }
 
-        public void storeValues(SensorEvent sensorEvent) {
+        void storeValues(SensorEvent sensorEvent) {
 
             int sensorType = sensorEvent.sensor.getType();
             float[] values = sensorEvent.values;
@@ -96,23 +96,23 @@ public class SensorValueManagers {
 
         protected abstract void removeValues(Collection collection);
 
-        public class SensorTolerance {
+        class SensorTolerance {
 
-            float mTolerance;
-            boolean mCumulative;
+            private float mTolerance;
+            private boolean mCumulative;
 
             private float[] prevValues = null;
 
-            public SensorTolerance(float tol, boolean cumulative) {
+            SensorTolerance(float tol, boolean cumulative) {
                 mTolerance = tol;
                 mCumulative = cumulative;
             }
 
-            public SensorTolerance(float difference) {
+            SensorTolerance(float difference) {
                 this(difference, false);
             }
 
-            public boolean toleranceIsExceeded(float[] values) {
+            boolean toleranceIsExceeded(float[] values) {
 
                 if (prevValues == null) {
                     prevValues = values.clone();
