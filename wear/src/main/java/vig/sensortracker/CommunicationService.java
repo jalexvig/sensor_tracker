@@ -14,24 +14,23 @@ import android.util.Log;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.wearable.CapabilityApi;
 import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.DataItem;
 import com.google.android.gms.wearable.MessageApi;
 import com.google.android.gms.wearable.MessageEvent;
-import com.google.android.gms.wearable.Node;
-import com.google.android.gms.wearable.PutDataRequest;
 import com.google.android.gms.wearable.Wearable;
 import com.google.android.gms.wearable.WearableListenerService;
 
 import org.apache.commons.lang3.SerializationUtils;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 
 import vig.sensortracker.Constants.SensorAttrs;
 
@@ -40,15 +39,38 @@ public class CommunicationService extends WearableListenerService implements Goo
     private static final String TAG = "CommunicationService";
 
     private GoogleApiClient mGoogleApiClient;
-    private String mSensorReceiverNodeId = null;
 
     @Override
     public void onMessageReceived(MessageEvent messageEvent) {
         if (messageEvent.getPath().equals(Constants.SENSOR_MESSAGE_PATH)) {
-            mSensorReceiverNodeId = messageEvent.getSourceNodeId();
-            SensorManager sm = (SensorManager) getSystemService(SENSOR_SERVICE);
-            sendSensorList(sm.getSensorList(Sensor.TYPE_ALL));
+            sendSensorList(messageEvent.getSourceNodeId(), getSensorAttrs());
         }
+    }
+
+    private ArrayList<SensorAttrs> getSensorAttrs() {
+
+        List<SensorAttrs> storedSensorAttrs = readSensorAttrs();
+
+        HashMap<String, SensorAttrs> hm = new HashMap<>();
+
+        for (SensorAttrs sa: storedSensorAttrs) {
+            hm.put(sa.getName(), sa);
+        }
+
+        ArrayList<SensorAttrs> result = new ArrayList<>();
+
+        SensorManager sm = (SensorManager) getSystemService(SENSOR_SERVICE);
+
+        for (Sensor s: sm.getSensorList(Sensor.TYPE_ALL)) {
+            String name = s.getName();
+            if (hm.containsKey(name)) {
+                result.add(hm.get(name));
+            } else {
+                result.add(new SensorAttrs(s.getType(), s.getName()));
+            }
+        }
+
+        return result;
     }
 
     @Override
@@ -118,15 +140,27 @@ public class CommunicationService extends WearableListenerService implements Goo
         return false;
     }
 
-    private void sendSensorList(List<Sensor> sensors) {
+    private List<SensorAttrs> readSensorAttrs() {
 
-        byte[] toSend = serializeSensors(sensors);
+        Log.d(TAG, "storeSensorAttrs: Getting stored sensor tolerances.");
 
-        if (mSensorReceiverNodeId == null) {
-            return;
+        List<SensorAttrs> result = new ArrayList<>();
+
+        try {
+            FileInputStream fis = openFileInput(Settings.FILENAME_SENSOR_ATTRS);
+            result = SerializationUtils.deserialize(fis);
+        } catch (FileNotFoundException e) {
+            Log.d(TAG, "getStoredSensorAttrs: No stored sensor data exist.");
         }
 
-        Wearable.MessageApi.sendMessage(mGoogleApiClient, mSensorReceiverNodeId,
+        return result;
+    }
+
+    private void sendSensorList(String sensorReceiverNodeId, ArrayList<SensorAttrs> sensorAttrs) {
+
+        byte[] toSend = SerializationUtils.serialize(sensorAttrs);
+
+        Wearable.MessageApi.sendMessage(mGoogleApiClient, sensorReceiverNodeId,
                 Constants.SENSOR_RECEIVER_MESSAGE_PATH, toSend).setResultCallback(
                 new ResultCallback<MessageApi.SendMessageResult>() {
                     @Override
@@ -140,18 +174,6 @@ public class CommunicationService extends WearableListenerService implements Goo
 
                 }
         );
-    }
-
-    private byte[] serializeSensors(List<Sensor> sensors) {
-        ArrayList<SensorAttrs> sensorAttrs = new ArrayList<>(sensors.size());
-
-        for (Sensor sensor : sensors) {
-            sensorAttrs.add(new SensorAttrs(sensor.getType(), sensor.getName()));
-        }
-
-        byte[] result = SerializationUtils.serialize(sensorAttrs);
-
-        return result;
     }
 
     @Override

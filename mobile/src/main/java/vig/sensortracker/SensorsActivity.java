@@ -35,13 +35,8 @@ import com.google.android.gms.wearable.Wearable;
 
 import org.apache.commons.lang3.SerializationUtils;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -51,8 +46,6 @@ public class SensorsActivity extends Activity implements GoogleApiClient.Connect
 
     private static final String TAG = "SensorsActivity";
 
-    private static final String FILENAME_SENSOR_ATTRS = "sensor_attrs";
-
     private GoogleApiClient mGoogleApiClient;
     private String mSensorNodeId = null;
 
@@ -61,7 +54,7 @@ public class SensorsActivity extends Activity implements GoogleApiClient.Connect
     private Button mCancelButton;
 
     SensorArrayAdapter mAdapter;
-    List<SensorAttrs> mSensorAttrs;
+    ArrayList<SensorAttrs> mSensorAttrs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,7 +73,7 @@ public class SensorsActivity extends Activity implements GoogleApiClient.Connect
         mSaveTolerancesButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                saveSensorAttrs();
+                sendSensorAttrs();
                 finish();
             }
         });
@@ -93,7 +86,7 @@ public class SensorsActivity extends Activity implements GoogleApiClient.Connect
             }
         });
 
-        mSensorAttrs = getStoredSensorAttrs();
+        mSensorAttrs = new ArrayList<>();
 
         mAdapter = new SensorArrayAdapter(this);
 
@@ -101,11 +94,7 @@ public class SensorsActivity extends Activity implements GoogleApiClient.Connect
 
         setGoogleApiClient();
 
-        if (mSensorAttrs.isEmpty()) {
-            updateSensors();
-        }
-
-//        TODO: Should only get list of sensors currently available... no need to store on mobile (also get their tolerances this way as well)
+        updateSensors();
     }
 
     private void setupListView() {
@@ -178,27 +167,8 @@ public class SensorsActivity extends Activity implements GoogleApiClient.Connect
         }
     }
 
-    private List<SensorAttrs> getStoredSensorAttrs() {
-        List<SensorAttrs> result = new ArrayList<>();
-
-        try {
-            FileInputStream fis = openFileInput(FILENAME_SENSOR_ATTRS);
-            result = SerializationUtils.deserialize(fis);
-        } catch (FileNotFoundException e) {
-            Log.d(TAG, "SensorAttrs local file doesn't exist.");
-        }
-
-        return result;
-    }
-
-    private void saveSensorAttrs() {
-        byte[] serializedSensorAttrs = storeSensorAttrs();
-        if (serializedSensorAttrs != null) {
-            sendSensorAttrs(serializedSensorAttrs);
-        }
-    }
-
-    private void sendSensorAttrs(byte[] data) {
+    private void sendSensorAttrs() {
+        byte[] data = SerializationUtils.serialize(mSensorAttrs);
         PutDataRequest pdr = PutDataRequest.create("/sensor_tolerances");
         pdr.setUrgent();
         pdr.setData(data);
@@ -214,51 +184,17 @@ public class SensorsActivity extends Activity implements GoogleApiClient.Connect
         });
     }
 
-    private byte[] storeSensorAttrs() {
-
-        try {
-            FileOutputStream fos = openFileOutput(FILENAME_SENSOR_ATTRS, MODE_PRIVATE);
-            byte[] result = SerializationUtils.serialize((Serializable) mSensorAttrs);
-            fos.write(result);
-            return result;
-        } catch (IOException e) {
-            Log.e(TAG, "storeSensorAttrs: Error serializing sensor attrs", e);
-        }
-
-        return null;
-    }
-
     @Override
     public void onMessageReceived(MessageEvent messageEvent) {
         if (messageEvent.getPath().equals(Constants.SENSOR_RECEIVER_MESSAGE_PATH)) {
             byte[] data = messageEvent.getData();
             List<SensorAttrs> sensorAttrs = SerializationUtils.deserialize(data);
 
-            setCombinedSensorAttrs(sensorAttrs);
+            mSensorAttrs.clear();
+            mSensorAttrs.addAll(sensorAttrs);
+
+            mAdapter.notifyDataSetChanged();
         }
-    }
-
-    private void setCombinedSensorAttrs(List<SensorAttrs> newSensorAttrs) {
-
-        HashMap<Integer, SensorAttrs> hm = new HashMap<>();
-        if (mSensorAttrs != null) {
-            for (SensorAttrs sa : mSensorAttrs) {
-                hm.put(sa.getSensorType(), sa);
-            }
-        }
-
-        List<SensorAttrs> sensorAttrs = new ArrayList<>(newSensorAttrs.size());
-
-        for (SensorAttrs sa : newSensorAttrs) {
-            SensorAttrs saOld = hm.get(sa.getSensorType());
-            float tolerance = (saOld != null) ? saOld.getTolerance() : SensorAttrs.DEFAULT_TOLERANCE;
-            sensorAttrs.add(new SensorAttrs(sa.getSensorType(), sa.getName(), tolerance));
-        }
-
-        mSensorAttrs.clear();
-        mSensorAttrs.addAll(sensorAttrs);
-
-        mAdapter.notifyDataSetChanged();
     }
 
     private void requestSensorList() {
