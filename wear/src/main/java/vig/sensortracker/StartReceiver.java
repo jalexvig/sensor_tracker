@@ -60,7 +60,7 @@ public class StartReceiver extends BroadcastReceiver {
 
         if (start) {
             mAlarmManager.setRepeating(AlarmManager.RTC_WAKEUP, Calendar.getInstance().getTimeInMillis(),
-                    1000 * 60, mAlarmIntent);
+                    Settings.MILLIS_BETWEEN_SUBMISSIONS, mAlarmIntent);
             Log.d(TAG, "setupAPICalls: Setup API calls");
         }
     }

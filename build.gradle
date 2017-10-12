@@ -22,7 +22,7 @@ ext {
     commonBuildToolsVersion = '25.0.2'
     commonCompileSdkVersion = 25
     commonTargetSdkVersion = 26
-    appVersionCode = 7
+    appVersionCode = 8
     appVersionName = "0.0.1"
     signingProperties = "sensortracker.properties"
 }

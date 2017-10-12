@@ -14,4 +14,6 @@ public class Settings {
 
     static final String SPREADSHEET_TITLE = "Sensor Tracker Data";
     static final String FILENAME_SENSOR_ATTRS = "sensor_attrs";
+
+    static final int MILLIS_BETWEEN_SUBMISSIONS = 1000 * 60;
 }
