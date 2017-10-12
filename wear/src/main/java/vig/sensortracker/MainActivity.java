@@ -32,8 +32,8 @@ public class MainActivity extends Activity implements MakeRequestTask.MakeReques
 
     GoogleAccountCredential mCredential;
 
-    private ImageButton mAPIButton;
-    private ImageButton mExecutionButton;
+    private ImageButton mSyncButton;
+    private ImageButton mStopPlayButton;
 
     private boolean mServiceRunning;
     private SensorValueManagers.SensorValueManager mSensorValueManager;
@@ -55,19 +55,13 @@ public class MainActivity extends Activity implements MakeRequestTask.MakeReques
 
         setupStopPlayButton();
 
-        ensureSpreadsheetCreated();
-    }
-
-    private void ensureSpreadsheetCreated() {
-        if (getSpreadsheetId() == null) {
-            mAPIButton.performClick();
-        }
+        mSyncButton.performClick();
     }
 
     private void setupStopPlayButton() {
 
-        mExecutionButton = (ImageButton) findViewById(R.id.execution_button);
-        mExecutionButton.setOnClickListener(new View.OnClickListener() {
+        mStopPlayButton = (ImageButton) findViewById(R.id.execution_button);
+        mStopPlayButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent i = new Intent(MainActivity.this, StartReceiver.class);
@@ -76,20 +70,20 @@ public class MainActivity extends Activity implements MakeRequestTask.MakeReques
                 mServiceRunning = !mServiceRunning;
                 updateRunningSP(mServiceRunning);
                 int idDrawable = mServiceRunning ? R.drawable.ic_stop_white_48dp : R.drawable.ic_play_arrow_white_48dp;
-                mExecutionButton.setImageResource(idDrawable);
+                mStopPlayButton.setImageResource(idDrawable);
             }
         });
 
     }
 
     private void setupSyncButton() {
-        mAPIButton = (ImageButton) findViewById(R.id.sync_button);
-        mAPIButton.setOnClickListener(new View.OnClickListener() {
+        mSyncButton = (ImageButton) findViewById(R.id.sync_button);
+        mSyncButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mAPIButton.setEnabled(false);
+                mSyncButton.setEnabled(false);
                 sendData();
-                mAPIButton.setEnabled(true);
+                mSyncButton.setEnabled(true);
             }
         });
     }
@@ -121,7 +115,9 @@ public class MainActivity extends Activity implements MakeRequestTask.MakeReques
         if (!setCredentialAccount()) return;
 
         Map<String, String> toSend = mSensorValueManager.getStoredValues();
-        if (!toSend.isEmpty()) {
+
+//        Make request if new data exists or setup hasn't been done yet
+        if (!toSend.isEmpty() || getSpreadsheetId() == null) {
             Log.d(TAG, "sendData: account name " + mCredential.getSelectedAccountName());
             new MakeRequestTask(mCredential, toSend, this).execute();
         } else {

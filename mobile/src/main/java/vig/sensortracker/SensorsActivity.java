@@ -104,6 +104,8 @@ public class SensorsActivity extends Activity implements GoogleApiClient.Connect
         if (mSensorAttrs.isEmpty()) {
             updateSensors();
         }
+
+//        TODO: Should only get list of sensors currently available... no need to store on mobile (also get their tolerances this way as well)
     }
 
     private void setupListView() {
